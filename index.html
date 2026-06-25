@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PRD HTML 本地整理工具</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #fff;
+      --text: #172033;
+      --muted: #667085;
+      --line: #d9e1ec;
+      --primary: #2563eb;
+      --soft: #eef4ff;
+      --warn: #fff7ed;
+      --warn-line: #fed7aa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      background: #111827;
+      color: white;
+      padding: 24px 32px;
+    }
+    h1 { margin: 0 0 8px; font-size: 24px; letter-spacing: 0; }
+    header p { margin: 0; color: #cbd5e1; line-height: 1.7; }
+    main { max-width: 1360px; margin: 0 auto; padding: 24px 32px 48px; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 1px 2px rgba(16,24,40,.04);
+    }
+    .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    input[type=file] { display: none; }
+    button, .file-btn {
+      border: 1px solid var(--primary);
+      background: var(--primary);
+      color: white;
+      border-radius: 6px;
+      min-height: 38px;
+      padding: 8px 14px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+    button.secondary, .file-btn.secondary { background: white; color: var(--primary); }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .hint { color: var(--muted); line-height: 1.7; font-size: 14px; margin-top: 10px; }
+    .notice {
+      border: 1px solid var(--warn-line);
+      background: var(--warn);
+      color: #7c2d12;
+      padding: 12px 14px;
+      border-radius: 8px;
+      line-height: 1.7;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+    .layout { display: grid; grid-template-columns: 330px 1fr; gap: 18px; align-items: start; }
+    .pkg-list { display: flex; flex-direction: column; gap: 8px; max-height: 70vh; overflow: auto; }
+    .pkg {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 12px;
+      background: white;
+      cursor: pointer;
+    }
+    .pkg.active { border-color: var(--primary); background: var(--soft); }
+    .pkg h3 { margin: 0 0 6px; font-size: 15px; word-break: break-all; }
+    .pkg p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .toolbar h2 { margin: 0; font-size: 20px; word-break: break-all; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)); gap: 12px; margin-top: 14px; }
+    .stat { border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; padding: 12px; }
+    .stat strong { display: block; font-size: 22px; margin-bottom: 4px; }
+    .stat span { color: var(--muted); font-size: 13px; }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #0f172a;
+      color: #e5e7eb;
+      border-radius: 8px;
+      padding: 14px;
+      max-height: 70vh;
+      overflow: auto;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .empty {
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      min-height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.8;
+      padding: 24px;
+    }
+    @media (max-width: 900px) {
+      header { padding: 20px 18px; }
+      main { padding: 18px; }
+      .layout { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PRD HTML 本地整理工具</h1>
+    <p>本地读取 HTML / Axure 导出的原型文件夹，批量生成知识库 Markdown 草稿。不上传文件，不调用 API。</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="row">
+        <label class="file-btn">
+          选择 PRD / Axure 文件夹
+          <input id="folderInput" type="file" webkitdirectory directory multiple />
+        </label>
+        <label class="file-btn secondary">
+          选择 HTML 文件
+          <input id="fileInput" type="file" accept=".html,.htm" multiple />
+        </label>
+        <button id="downloadAllBtn" class="secondary" disabled>下载全部 Markdown</button>
+        <button id="clearBtn" class="secondary" disabled>清空</button>
+      </div>
+      <div class="hint">推荐选择完整文件夹。工具会自动识别多个需求包，并为每个需求包生成一份 Markdown 草稿。</div>
+      <div class="notice">注意：这是不调用 AI 的本地规则版，只能生成“结构化草稿”。它不会真正理解图片里的原型内容，也不能替代人工/AI 的产品总结。</div>
+      <div id="stats" class="stats" style="display:none"></div>
+    </section>
+
+    <section id="workspace" class="layout" style="display:none">
+      <aside class="panel">
+        <div class="toolbar"><h2>需求包</h2></div>
+        <div id="packageList" class="pkg-list"></div>
+      </aside>
+
+      <section class="panel">
+        <div class="toolbar">
+          <h2 id="currentTitle">请选择需求包</h2>
+          <div class="row">
+            <button id="downloadBtn" class="secondary" disabled>下载当前 Markdown</button>
+            <button id="copyBtn" class="secondary" disabled>复制当前 Markdown</button>
+          </div>
+        </div>
+        <div id="result" class="empty">选择文件夹后，这里会显示规则生成的 Markdown 草稿。</div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const state = { packages: [], selected: -1 };
+    const folderInput = document.getElementById("folderInput");
+    const fileInput = document.getElementById("fileInput");
+    const packageList = document.getElementById("packageList");
+    const workspace = document.getElementById("workspace");
+    const currentTitle = document.getElementById("currentTitle");
+    const result = document.getElementById("result");
+    const stats = document.getElementById("stats");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const downloadAllBtn = document.getElementById("downloadAllBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    const clearBtn = document.getElementById("clearBtn");
+
+    folderInput.addEventListener("change", e => loadFiles(Array.from(e.target.files)));
+    fileInput.addEventListener("change", e => loadFiles(Array.from(e.target.files)));
+    downloadBtn.addEventListener("click", () => downloadCurrent());
+    downloadAllBtn.addEventListener("click", () => downloadAll());
+    copyBtn.addEventListener("click", () => copyCurrent());
+    clearBtn.addEventListener("click", clearAll);
+
+    async function loadFiles(files) {
+      if (!files.length) return;
+      const records = await Promise.all(files.map(readFile));
+      state.packages = buildPackages(records);
+      state.selected = state.packages.length ? 0 : -1;
+      for (const pkg of state.packages) pkg.markdown = buildMarkdown(pkg);
+      render();
+    }
+
+    function readFile(file) {
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        const relativePath = file.webkitRelativePath || file.name;
+        reader.onload = () => resolve({ file, name: file.name, relativePath, size: file.size, content: reader.result });
+        if (/\.(png|jpe?g|gif|webp|svg)$/i.test(file.name)) reader.readAsDataURL(file);
+        else reader.readAsText(file, "utf-8");
+      });
+    }
+
+    function buildPackages(records) {
+      const htmls = records.filter(r => /\.html?$/i.test(r.name) && !isShellPage(r.name));
+      const images = records.filter(r => /\.(png|jpe?g|gif|webp|svg)$/i.test(r.name));
+      const groups = new Map();
+
+      for (const html of htmls) {
+        const key = groupKey(html.relativePath);
+        if (!groups.has(key)) groups.set(key, { name: groupName(key, html.name), root: key, htmls: [], images: [] });
+        groups.get(key).htmls.push(html);
+      }
+
+      for (const group of groups.values()) {
+        group.pages = group.htmls
+          .sort((a, b) => pageRank(a.name) - pageRank(b.name) || a.name.localeCompare(b.name, "zh-CN"))
+          .map(parseHtml);
+        group.images = images.filter(img => isUnder(img.relativePath, group.root)).sort((a, b) => b.size - a.size);
+      }
+
+      return Array.from(groups.values()).sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+    }
+
+    function parseHtml(file) {
+      const doc = new DOMParser().parseFromString(file.content, "text/html");
+      doc.querySelectorAll("script,style").forEach(n => n.remove());
+      const title = doc.querySelector("title")?.textContent?.trim() || file.name;
+      const text = cleanText(doc.body ? doc.body.innerText : "");
+      return { name: file.name, title, relativePath: file.relativePath, text };
+    }
+
+    function buildMarkdown(pkg) {
+      const original = pickPages(pkg.pages, ["需求方原始描述"]);
+      const requirement = pickPages(pkg.pages, ["需求说明", "PRD"]);
+      const prototype = pkg.pages.filter(p => !original.includes(p) && !requirement.includes(p));
+      const allText = pkg.pages.map(p => p.text).join("\n");
+
+      const title = pkg.name;
+      const scope = inferScope(pkg.pages, allText);
+      const prototypeNotes = inferPrototypeNotes(prototype);
+      const rules = inferRules(allText);
+      const overview = inferOverview(title, original, requirement, prototypeNotes);
+      const risks = inferRisks(allText, pkg);
+
+      const lines = [];
+      lines.push(`# ${title}`);
+      lines.push("");
+      lines.push("## 概括");
+      lines.push(overview || "本地规则版未能稳定识别概要，请结合需求说明和原型页面人工补充。");
+      lines.push("");
+      lines.push("## 涉及范围");
+      lines.push(scope.length ? scope.map(s => `- ${s}`).join("\n") : "- 未稳定识别，请人工补充。");
+      lines.push("");
+      lines.push("## 原型改动");
+      lines.push(prototypeNotes.length ? prototypeNotes.map(s => `- ${s}`).join("\n") : "- 未稳定识别原型改动，请查看原型页面补充。");
+      lines.push("");
+      lines.push("## 业务规则");
+      lines.push(rules.length ? rules.map(s => `- ${s}`).join("\n") : "- 未稳定识别业务规则，请人工补充。");
+      lines.push("");
+      lines.push("## 待确认或风险");
+      lines.push(risks.length ? risks.map(s => `- ${s}`).join("\n") : "- 暂未从文本中识别到明确待确认项。");
+      lines.push("");
+      lines.push("## 入库说明");
+      lines.push(`- 本文档由本地规则生成，未调用 AI。`);
+      lines.push(`- HTML 页面数：${pkg.pages.length}`);
+      lines.push(`- 图片/截图数：${pkg.images.length}`);
+      lines.push("- 图片中的文字和视觉状态未自动识别，重要原型截图需要人工确认。");
+      return lines.join("\n");
+    }
+
+    function inferOverview(title, original, requirement, prototypeNotes) {
+      const text = [...original, ...requirement].map(p => p.text).join("\n");
+      const sentences = splitSentences(text);
+      const background = sentences.find(s => /问题|当前|背景|用户反馈|导致|无法|需要/.test(s));
+      const goal = sentences.find(s => /新增|优化|支持|调整|改为|实现|同步/.test(s));
+      if (background && goal) return `${background} ${goal}`;
+      if (goal) return goal;
+      if (prototypeNotes.length) return `本需求围绕“${title}”进行页面和流程调整，主要变化包括：${prototypeNotes.slice(0, 2).join("；")}。`;
+      return "";
+    }
+
+    function inferScope(pages, text) {
+      const scope = new Set();
+      for (const p of pages) {
+        const name = (p.title || p.name).replace(/\.html?$/i, "");
+        if (!/需求说明|需求方原始描述|Untitled Document/.test(name)) scope.add(name);
+      }
+      const known = ["后台", "PC", "APP", "小程序", "管理后台", "用户侧", "结算页", "优惠券列表", "使用优惠券"];
+      for (const k of known) if (text.includes(k)) scope.add(k);
+      return Array.from(scope).filter(Boolean).slice(0, 12);
+    }
+
+    function inferPrototypeNotes(pages) {
+      const notes = [];
+      for (const p of pages) {
+        const lines = p.text.split("\n");
+        for (const line of lines) {
+          if (/【?增|新增|增加|改为|调整|支持|展示|隐藏|入口|按钮|分类|弹窗|页面结构|标题|默认/.test(line)) {
+            notes.push(normalizeLine(line, p));
+          }
+        }
+      }
+      return unique(notes).slice(0, 12);
+    }
+
+    function inferRules(text) {
+      const rules = splitSentences(text).filter(s =>
+        /复用|沿用|若|如果|当|仅|不调整|不新增|默认|校验|匹配|验证|计算|退回|失败|成功|状态|范围|权限/.test(s)
+      );
+      return unique(rules).slice(0, 14);
+    }
+
+    function inferRisks(text, pkg) {
+      const risks = splitSentences(text).filter(s => /需确认|待确认|风险|异常|失败|不支持|另行确认|未提及/.test(s));
+      if (pkg.images.length) risks.push("存在原型图片/截图资源，本地规则版未读取图片文字，关键页面状态需要人工核对。");
+      return unique(risks).slice(0, 10);
+    }
+
+    function normalizeLine(line, page) {
+      line = line.replace(/^样式说明[:：]?/, "").replace(/^交互说明[:：]?/, "").trim();
+      const title = (page.title || page.name).replace(/\.html?$/i, "");
+      if (line.length < 12) return "";
+      return `${title}：${line}`;
+    }
+
+    function pickPages(pages, keys) {
+      return pages.filter(p => keys.some(k => (p.name + p.title).includes(k)));
+    }
+
+    function splitSentences(text) {
+      return cleanText(text)
+        .split(/[\n。；;]/)
+        .map(s => s.trim())
+        .filter(s => s.length >= 12 && s.length <= 180);
+    }
+
+    function cleanText(text) {
+      const seen = new Set();
+      return String(text || "")
+        .replace(/\u00a0/g, " ")
+        .split(/\n/)
+        .map(s => s.trim().replace(/[ \t]+/g, " "))
+        .filter(Boolean)
+        .filter(s => !/^(\d+|增|改|新增|删除|[a-z]\d+)$/i.test(s))
+        .filter(s => {
+          const key = s.replace(/\s+/g, "");
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .join("\n");
+    }
+
+    function unique(list) {
+      const seen = new Set();
+      return list.map(s => String(s || "").trim()).filter(s => {
+        if (!s) return false;
+        const key = s.replace(/\s+/g, "");
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function isShellPage(name) { return /^(index|start|start_c_1|start_with_pages)\.html$/i.test(name); }
+    function pageRank(name) {
+      if (/需求方原始描述/.test(name)) return 1;
+      if (/需求说明|PRD/.test(name)) return 2;
+      return 3;
+    }
+    function norm(path) { return String(path || "").replace(/\\/g, "/").replace(/^\/+/, ""); }
+    function groupKey(path) {
+      const parts = norm(path).split("/");
+      if (parts.length <= 1) return ".";
+      parts.pop();
+      return parts.join("/") || ".";
+    }
+    function groupName(key, fallback) {
+      if (key === ".") return fallback.replace(/\.html?$/i, "");
+      return key.split("/").filter(Boolean).pop() || fallback.replace(/\.html?$/i, "");
+    }
+    function isUnder(path, root) {
+      const p = norm(path);
+      if (root === ".") return !p.includes("/");
+      return p.startsWith(root.replace(/\/$/, "") + "/");
+    }
+
+    function render() {
+      workspace.style.display = state.packages.length ? "" : "none";
+      clearBtn.disabled = !state.packages.length;
+      downloadAllBtn.disabled = !state.packages.length;
+      renderStats();
+      renderList();
+      renderCurrent();
+    }
+
+    function renderStats() {
+      if (!state.packages.length) { stats.style.display = "none"; return; }
+      const pages = state.packages.reduce((sum, p) => sum + p.pages.length, 0);
+      const images = state.packages.reduce((sum, p) => sum + p.images.length, 0);
+      stats.style.display = "";
+      stats.innerHTML = `
+        <div class="stat"><strong>${state.packages.length}</strong><span>需求包</span></div>
+        <div class="stat"><strong>${pages}</strong><span>HTML 页面</span></div>
+        <div class="stat"><strong>${images}</strong><span>图片/截图</span></div>
+        <div class="stat"><strong>0</strong><span>API 调用</span></div>
+      `;
+    }
+
+    function renderList() {
+      packageList.innerHTML = "";
+      state.packages.forEach((pkg, i) => {
+        const el = document.createElement("div");
+        el.className = "pkg" + (i === state.selected ? " active" : "");
+        el.innerHTML = `<h3>${esc(pkg.name)}</h3><p>${pkg.pages.length} 个页面 · ${pkg.images.length} 张图片</p>`;
+        el.onclick = () => { state.selected = i; render(); };
+        packageList.appendChild(el);
+      });
+    }
+
+    function renderCurrent() {
+      const pkg = state.packages[state.selected];
+      downloadBtn.disabled = !pkg;
+      copyBtn.disabled = !pkg;
+      if (!pkg) {
+        currentTitle.textContent = "请选择需求包";
+        result.className = "empty";
+        result.textContent = "选择文件夹后，这里会显示规则生成的 Markdown 草稿。";
+        return;
+      }
+      currentTitle.textContent = pkg.name;
+      result.className = "";
+      result.innerHTML = `<pre>${esc(pkg.markdown)}</pre>`;
+    }
+
+    function downloadCurrent() {
+      const pkg = state.packages[state.selected];
+      if (!pkg) return;
+      downloadText(`${safeName(pkg.name)}.md`, pkg.markdown);
+    }
+    function downloadAll() {
+      const text = state.packages.map(p => p.markdown).join("\n\n---\n\n");
+      downloadText(`prd_markdown_${new Date().toISOString().slice(0, 10)}.md`, text);
+    }
+    async function copyCurrent() {
+      const pkg = state.packages[state.selected];
+      if (pkg) await navigator.clipboard.writeText(pkg.markdown);
+    }
+    function downloadText(name, text) {
+      const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    function clearAll() {
+      state.packages = [];
+      state.selected = -1;
+      folderInput.value = "";
+      fileInput.value = "";
+      render();
+    }
+    function safeName(name) { return String(name || "prd").replace(/[\\/:*?"<>|]/g, "_").slice(0, 80); }
+    function esc(text) {
+      return String(text ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>
