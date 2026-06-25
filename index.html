@@ -251,7 +251,7 @@
       const prototypeNotes = inferPrototypeNotes(prototype);
       const rules = inferRules(allText);
       const overview = inferOverview(title, original, requirement, prototypeNotes);
-      const risks = inferRisks(allText, pkg);
+      const notes = inferNotes(allText);
 
       const lines = [];
       lines.push(`# ${title}`);
@@ -268,14 +268,16 @@
       lines.push("## 业务规则");
       lines.push(rules.length ? rules.map(s => `- ${s}`).join("\n") : "- 未稳定识别业务规则，请人工补充。");
       lines.push("");
-      lines.push("## 待确认或风险");
-      lines.push(risks.length ? risks.map(s => `- ${s}`).join("\n") : "- 暂未从文本中识别到明确待确认项。");
+      lines.push("## 注意事项");
+      lines.push(notes.length ? notes.map(s => `- ${s}`).join("\n") : "- 未从文本中识别到额外注意事项。");
       lines.push("");
       lines.push("## 入库说明");
       lines.push(`- 本文档由本地规则生成，未调用 AI。`);
       lines.push(`- HTML 页面数：${pkg.pages.length}`);
       lines.push(`- 图片/截图数：${pkg.images.length}`);
-      lines.push("- 图片中的文字和视觉状态未自动识别，重要原型截图需要人工确认。");
+      if (pkg.images.length) {
+        lines.push("- 当前本地规则版未解析图片中的文字和视觉状态；如原型关键内容只存在于截图中，建议在入库前补充截图摘要。");
+      }
       return lines.join("\n");
     }
 
@@ -321,10 +323,9 @@
       return unique(rules).slice(0, 14);
     }
 
-    function inferRisks(text, pkg) {
-      const risks = splitSentences(text).filter(s => /需确认|待确认|风险|异常|失败|不支持|另行确认|未提及/.test(s));
-      if (pkg.images.length) risks.push("存在原型图片/截图资源，本地规则版未读取图片文字，关键页面状态需要人工核对。");
-      return unique(risks).slice(0, 10);
+    function inferNotes(text) {
+      const notes = splitSentences(text).filter(s => /异常|失败|不支持|不调整|不新增|仅|默认|未提及|保持|沿用|复用/.test(s));
+      return unique(notes).slice(0, 10);
     }
 
     function normalizeLine(line, page) {
