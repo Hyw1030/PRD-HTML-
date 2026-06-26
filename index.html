@@ -13,12 +13,6 @@
       --line: #d9e1ec;
       --primary: #2563eb;
       --primary-soft: #eef4ff;
-      --warn-bg: #fff7ed;
-      --warn-line: #fed7aa;
-      --warn-text: #7c2d12;
-      --ok-bg: #ecfdf3;
-      --ok-line: #bbf7d0;
-      --ok-text: #166534;
     }
     * { box-sizing: border-box; }
     body {
@@ -36,7 +30,6 @@
     h2 { margin: 0; font-size: 20px; }
     h3 { margin: 0 0 8px; font-size: 16px; }
     p { margin: 0; }
-    header p { color: #cbd5e1; line-height: 1.8; }
     main { max-width: 1440px; margin: 0 auto; padding: 24px 32px 48px; }
     .panel {
       background: var(--panel);
@@ -67,26 +60,6 @@
     button.secondary, .file-btn.secondary { background: white; color: var(--primary); }
     button:disabled { opacity: .45; cursor: not-allowed; }
     .hint { color: var(--muted); line-height: 1.75; font-size: 14px; margin-top: 10px; }
-    .notice {
-      border: 1px solid var(--warn-line);
-      background: var(--warn-bg);
-      color: var(--warn-text);
-      padding: 12px 14px;
-      border-radius: 8px;
-      line-height: 1.75;
-      margin-top: 12px;
-      font-size: 14px;
-    }
-    .success {
-      border: 1px solid var(--ok-line);
-      background: var(--ok-bg);
-      color: var(--ok-text);
-      padding: 12px 14px;
-      border-radius: 8px;
-      line-height: 1.75;
-      margin-top: 12px;
-      font-size: 14px;
-    }
     .stats { display: grid; grid-template-columns: repeat(5, minmax(130px, 1fr)); gap: 12px; margin-top: 14px; }
     .stat { border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; padding: 12px; }
     .stat strong { display: block; font-size: 22px; margin-bottom: 4px; }
@@ -155,7 +128,6 @@
 <body>
   <header>
     <h1>PRD HTML 知识卡片工具</h1>
-    <p>给没有代码基础的人使用：选择 PRD / Axure 导出的 HTML 文件夹，自动抽取文字和原型说明，生成知识库 Markdown 与 Word 文档。</p>
   </header>
 
   <main>
@@ -175,12 +147,6 @@
       </div>
       <div class="hint">
         推荐直接选择 Axure 导出的完整文件夹，或选择包含多个 PRD HTML 的总目录。本工具会批量识别多个需求包，并按“概括、涉及范围、原型改动、业务规则、注意事项、关联模块”输出。
-      </div>
-      <div class="notice">
-        本地版不会调用 API，因此能稳定处理的是 HTML 里的文字、Axure 页面文字、原型标注和图片清单；如果关键内容只存在于截图里，需要后续接 AI 视觉/OCR 才能真正“看图总结”。
-      </div>
-      <div class="success">
-        推荐流程：先用本工具批量生成知识卡片，再把 Markdown / Word 上传到企业知识库；如果要做到更准确的原型理解，可以在网站后续增加 AI 总结接口。
       </div>
       <div id="stats" class="stats" style="display:none"></div>
     </section>
