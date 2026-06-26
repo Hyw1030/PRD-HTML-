@@ -3,18 +3,22 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PRD HTML 本地整理工具</title>
+  <title>PRD HTML 知识卡片工具</title>
   <style>
     :root {
-      --bg: #f6f8fb;
+      --bg: #f5f7fb;
       --panel: #fff;
       --text: #172033;
       --muted: #667085;
       --line: #d9e1ec;
       --primary: #2563eb;
-      --soft: #eef4ff;
-      --warn: #fff7ed;
+      --primary-soft: #eef4ff;
+      --warn-bg: #fff7ed;
       --warn-line: #fed7aa;
+      --warn-text: #7c2d12;
+      --ok-bg: #ecfdf3;
+      --ok-line: #bbf7d0;
+      --ok-text: #166534;
     }
     * { box-sizing: border-box; }
     body {
@@ -26,20 +30,24 @@
     header {
       background: #111827;
       color: white;
-      padding: 24px 32px;
+      padding: 26px 34px;
     }
-    h1 { margin: 0 0 8px; font-size: 24px; letter-spacing: 0; }
-    header p { margin: 0; color: #cbd5e1; line-height: 1.7; }
-    main { max-width: 1360px; margin: 0 auto; padding: 24px 32px 48px; }
+    h1 { margin: 0 0 8px; font-size: 26px; letter-spacing: 0; }
+    h2 { margin: 0; font-size: 20px; }
+    h3 { margin: 0 0 8px; font-size: 16px; }
+    p { margin: 0; }
+    header p { color: #cbd5e1; line-height: 1.8; }
+    main { max-width: 1440px; margin: 0 auto; padding: 24px 32px 48px; }
     .panel {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: 18px;
       margin-bottom: 18px;
-      box-shadow: 0 1px 2px rgba(16,24,40,.04);
+      box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
     }
     .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    .between { justify-content: space-between; }
     input[type=file] { display: none; }
     button, .file-btn {
       border: 1px solid var(--primary);
@@ -58,19 +66,33 @@
     }
     button.secondary, .file-btn.secondary { background: white; color: var(--primary); }
     button:disabled { opacity: .45; cursor: not-allowed; }
-    .hint { color: var(--muted); line-height: 1.7; font-size: 14px; margin-top: 10px; }
+    .hint { color: var(--muted); line-height: 1.75; font-size: 14px; margin-top: 10px; }
     .notice {
       border: 1px solid var(--warn-line);
-      background: var(--warn);
-      color: #7c2d12;
+      background: var(--warn-bg);
+      color: var(--warn-text);
       padding: 12px 14px;
       border-radius: 8px;
-      line-height: 1.7;
+      line-height: 1.75;
       margin-top: 12px;
       font-size: 14px;
     }
+    .success {
+      border: 1px solid var(--ok-line);
+      background: var(--ok-bg);
+      color: var(--ok-text);
+      padding: 12px 14px;
+      border-radius: 8px;
+      line-height: 1.75;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+    .stats { display: grid; grid-template-columns: repeat(5, minmax(130px, 1fr)); gap: 12px; margin-top: 14px; }
+    .stat { border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; padding: 12px; }
+    .stat strong { display: block; font-size: 22px; margin-bottom: 4px; }
+    .stat span { color: var(--muted); font-size: 13px; }
     .layout { display: grid; grid-template-columns: 330px 1fr; gap: 18px; align-items: start; }
-    .pkg-list { display: flex; flex-direction: column; gap: 8px; max-height: 70vh; overflow: auto; }
+    .pkg-list { display: flex; flex-direction: column; gap: 8px; max-height: 72vh; overflow: auto; }
     .pkg {
       border: 1px solid var(--line);
       border-radius: 7px;
@@ -78,22 +100,25 @@
       background: white;
       cursor: pointer;
     }
-    .pkg.active { border-color: var(--primary); background: var(--soft); }
-    .pkg h3 { margin: 0 0 6px; font-size: 15px; word-break: break-all; }
-    .pkg p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 14px;
+    .pkg.active { border-color: var(--primary); background: var(--primary-soft); }
+    .pkg h3 { font-size: 15px; word-break: break-all; }
+    .pkg p { color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+    .tab {
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: white;
     }
-    .toolbar h2 { margin: 0; font-size: 20px; word-break: break-all; }
-    .stats { display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)); gap: 12px; margin-top: 14px; }
-    .stat { border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; padding: 12px; }
-    .stat strong { display: block; font-size: 22px; margin-bottom: 4px; }
-    .stat span { color: var(--muted); font-size: 13px; }
+    .tab.active { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      background: #fff;
+      margin-bottom: 12px;
+    }
+    .card p, .card li { line-height: 1.8; }
+    .card ul { margin: 8px 0 0; padding-left: 22px; }
     pre {
       margin: 0;
       white-space: pre-wrap;
@@ -119,8 +144,8 @@
       line-height: 1.8;
       padding: 24px;
     }
-    @media (max-width: 900px) {
-      header { padding: 20px 18px; }
+    @media (max-width: 960px) {
+      header { padding: 22px 18px; }
       main { padding: 18px; }
       .layout { grid-template-columns: 1fr; }
       .stats { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
@@ -129,8 +154,8 @@
 </head>
 <body>
   <header>
-    <h1>PRD HTML 本地整理工具</h1>
-    <p>本地读取 HTML / Axure 导出的原型文件夹，批量生成知识库 Markdown 草稿。不上传文件，不调用 API。</p>
+    <h1>PRD HTML 知识卡片工具</h1>
+    <p>给没有代码基础的人使用：选择 PRD / Axure 导出的 HTML 文件夹，自动抽取文字和原型说明，生成知识库 Markdown 与 Word 文档。</p>
   </header>
 
   <main>
@@ -144,35 +169,52 @@
           选择 HTML 文件
           <input id="fileInput" type="file" accept=".html,.htm" multiple />
         </label>
-        <button id="downloadAllBtn" class="secondary" disabled>下载全部 Markdown</button>
+        <button id="downloadAllMdBtn" class="secondary" disabled>下载全部 Markdown</button>
+        <button id="downloadAllDocxBtn" class="secondary" disabled>下载全部 Word</button>
         <button id="clearBtn" class="secondary" disabled>清空</button>
       </div>
-      <div class="hint">推荐选择完整文件夹。工具会自动识别多个需求包，并为每个需求包生成一份 Markdown 草稿。</div>
-      <div class="notice">注意：这是不调用 AI 的本地规则版，只能生成“结构化草稿”。它不会真正理解图片里的原型内容，也不能替代人工/AI 的产品总结。</div>
+      <div class="hint">
+        推荐直接选择 Axure 导出的完整文件夹，或选择包含多个 PRD HTML 的总目录。本工具会批量识别多个需求包，并按“概括、涉及范围、原型改动、业务规则、注意事项、关联模块”输出。
+      </div>
+      <div class="notice">
+        本地版不会调用 API，因此能稳定处理的是 HTML 里的文字、Axure 页面文字、原型标注和图片清单；如果关键内容只存在于截图里，需要后续接 AI 视觉/OCR 才能真正“看图总结”。
+      </div>
+      <div class="success">
+        推荐流程：先用本工具批量生成知识卡片，再把 Markdown / Word 上传到企业知识库；如果要做到更准确的原型理解，可以在网站后续增加 AI 总结接口。
+      </div>
       <div id="stats" class="stats" style="display:none"></div>
     </section>
 
     <section id="workspace" class="layout" style="display:none">
       <aside class="panel">
-        <div class="toolbar"><h2>需求包</h2></div>
+        <div class="row between" style="margin-bottom:12px">
+          <h2>需求包</h2>
+        </div>
         <div id="packageList" class="pkg-list"></div>
       </aside>
 
       <section class="panel">
-        <div class="toolbar">
+        <div class="row between">
           <h2 id="currentTitle">请选择需求包</h2>
           <div class="row">
-            <button id="downloadBtn" class="secondary" disabled>下载当前 Markdown</button>
-            <button id="copyBtn" class="secondary" disabled>复制当前 Markdown</button>
+            <button id="downloadMdBtn" class="secondary" disabled>下载当前 Markdown</button>
+            <button id="downloadDocxBtn" class="secondary" disabled>下载当前 Word</button>
+            <button id="copyBtn" class="secondary" disabled>复制 Markdown</button>
           </div>
         </div>
-        <div id="result" class="empty">选择文件夹后，这里会显示规则生成的 Markdown 草稿。</div>
+        <div class="tabs">
+          <button id="cardTab" class="tab active">知识卡片</button>
+          <button id="markdownTab" class="tab">Markdown</button>
+          <button id="rawTab" class="tab">原始抽取</button>
+        </div>
+        <div id="result" class="empty">选择文件夹后，这里会显示总结后的产品知识卡片。</div>
       </section>
     </section>
   </main>
 
   <script>
-    const state = { packages: [], selected: -1 };
+    const state = { packages: [], selected: -1, tab: "card" };
+
     const folderInput = document.getElementById("folderInput");
     const fileInput = document.getElementById("fileInput");
     const packageList = document.getElementById("packageList");
@@ -180,24 +222,40 @@
     const currentTitle = document.getElementById("currentTitle");
     const result = document.getElementById("result");
     const stats = document.getElementById("stats");
-    const downloadBtn = document.getElementById("downloadBtn");
-    const downloadAllBtn = document.getElementById("downloadAllBtn");
+    const downloadMdBtn = document.getElementById("downloadMdBtn");
+    const downloadDocxBtn = document.getElementById("downloadDocxBtn");
+    const downloadAllMdBtn = document.getElementById("downloadAllMdBtn");
+    const downloadAllDocxBtn = document.getElementById("downloadAllDocxBtn");
     const copyBtn = document.getElementById("copyBtn");
     const clearBtn = document.getElementById("clearBtn");
+    const cardTab = document.getElementById("cardTab");
+    const markdownTab = document.getElementById("markdownTab");
+    const rawTab = document.getElementById("rawTab");
 
     folderInput.addEventListener("change", e => loadFiles(Array.from(e.target.files)));
     fileInput.addEventListener("change", e => loadFiles(Array.from(e.target.files)));
-    downloadBtn.addEventListener("click", () => downloadCurrent());
-    downloadAllBtn.addEventListener("click", () => downloadAll());
+    downloadMdBtn.addEventListener("click", () => downloadCurrentMarkdown());
+    downloadDocxBtn.addEventListener("click", () => downloadCurrentDocx());
+    downloadAllMdBtn.addEventListener("click", () => downloadAllMarkdown());
+    downloadAllDocxBtn.addEventListener("click", () => downloadAllDocx());
     copyBtn.addEventListener("click", () => copyCurrent());
     clearBtn.addEventListener("click", clearAll);
+    cardTab.addEventListener("click", () => setTab("card"));
+    markdownTab.addEventListener("click", () => setTab("markdown"));
+    rawTab.addEventListener("click", () => setTab("raw"));
 
     async function loadFiles(files) {
       if (!files.length) return;
+      result.className = "empty";
+      result.textContent = "正在读取文件，请稍等...";
       const records = await Promise.all(files.map(readFile));
       state.packages = buildPackages(records);
       state.selected = state.packages.length ? 0 : -1;
-      for (const pkg of state.packages) pkg.markdown = buildMarkdown(pkg);
+      for (const pkg of state.packages) {
+        pkg.card = buildKnowledgeCard(pkg);
+        pkg.markdown = buildMarkdown(pkg.card);
+        pkg.raw = buildRawExtract(pkg);
+      }
       render();
     }
 
@@ -212,7 +270,7 @@
     }
 
     function buildPackages(records) {
-      const htmls = records.filter(r => /\.html?$/i.test(r.name) && !isShellPage(r.name));
+      const htmls = records.filter(r => /\.html?$/i.test(r.name) && !isShellPage(r.name) && !isNoisePath(r.relativePath));
       const images = records.filter(r => /\.(png|jpe?g|gif|webp|svg)$/i.test(r.name));
       const groups = new Map();
 
@@ -225,182 +283,177 @@
       for (const group of groups.values()) {
         group.pages = group.htmls
           .sort((a, b) => pageRank(a.name) - pageRank(b.name) || a.name.localeCompare(b.name, "zh-CN"))
-          .map(parseHtml);
+          .map(parseHtml)
+          .filter(p => p.text.length > 20);
         group.images = images.filter(img => isUnder(img.relativePath, group.root)).sort((a, b) => b.size - a.size);
       }
 
-      return Array.from(groups.values()).sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+      return Array.from(groups.values())
+        .filter(g => g.pages.length)
+        .sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
     }
 
     function parseHtml(file) {
       const doc = new DOMParser().parseFromString(file.content, "text/html");
-      doc.querySelectorAll("script,style").forEach(n => n.remove());
-      const title = doc.querySelector("title")?.textContent?.trim() || file.name;
-      const text = cleanText(doc.body ? doc.body.innerText : "");
+      doc.querySelectorAll("script,style,noscript").forEach(n => n.remove());
+      const title = cleanOneLine(doc.querySelector("title")?.textContent || file.name.replace(/\.html?$/i, ""));
+      const bodyText = doc.body ? doc.body.innerText : "";
+      const text = cleanText(bodyText);
       return { name: file.name, title, relativePath: file.relativePath, text };
     }
 
-    function buildMarkdown(pkg) {
-      const original = pickPages(pkg.pages, ["需求方原始描述"]);
-      const requirement = pickPages(pkg.pages, ["需求说明", "PRD"]);
-      const prototype = pkg.pages.filter(p => !original.includes(p) && !requirement.includes(p));
+    function buildKnowledgeCard(pkg) {
       const allText = pkg.pages.map(p => p.text).join("\n");
-
-      const title = pkg.name;
-      const scope = inferScope(pkg.pages, allText);
-      const prototypeNotes = inferPrototypeNotes(prototype);
+      const pages = pkg.pages.map(p => ({ title: displayPageTitle(p), text: p.text }));
+      const title = cleanTitle(pkg.name);
+      const overview = inferOverview(title, allText);
+      const scope = inferScope(pages, allText);
+      const prototypeChanges = inferPrototypeChanges(pages);
       const rules = inferRules(allText);
-      const overview = inferOverview(title, original, requirement, prototypeNotes);
       const notes = inferNotes(allText);
+      const modules = inferModules(title, allText, scope);
+      const confidence = scoreCard({ overview, scope, prototypeChanges, rules }, pkg);
 
-      const lines = [];
-      lines.push(`# ${title}`);
-      lines.push("");
-      lines.push("## 概括");
-      lines.push(overview || "本地规则版未能稳定识别概要，请结合需求说明和原型页面人工补充。");
-      lines.push("");
-      lines.push("## 涉及范围");
-      lines.push(scope.length ? scope.map(s => `- ${s}`).join("\n") : "- 未稳定识别，请人工补充。");
-      lines.push("");
-      lines.push("## 原型改动");
-      lines.push(prototypeNotes.length ? prototypeNotes.map(s => `- ${s}`).join("\n") : "- 未稳定识别原型改动，请查看原型页面补充。");
-      lines.push("");
-      lines.push("## 业务规则");
-      lines.push(rules.length ? rules.map(s => `- ${s}`).join("\n") : "- 未稳定识别业务规则，请人工补充。");
-      lines.push("");
-      lines.push("## 注意事项");
-      lines.push(notes.length ? notes.map(s => `- ${s}`).join("\n") : "- 未从文本中识别到额外注意事项。");
-      lines.push("");
-      lines.push("## 入库说明");
-      lines.push(`- 本文档由本地规则生成，未调用 AI。`);
-      lines.push(`- HTML 页面数：${pkg.pages.length}`);
-      lines.push(`- 图片/截图数：${pkg.images.length}`);
-      if (pkg.images.length) {
-        lines.push("- 当前本地规则版未解析图片中的文字和视觉状态；如原型关键内容只存在于截图中，建议在入库前补充截图摘要。");
-      }
-      return lines.join("\n");
+      return {
+        title,
+        overview,
+        scope,
+        prototypeChanges,
+        rules,
+        notes,
+        modules,
+        source: {
+          htmlPages: pkg.pages.length,
+          images: pkg.images.length,
+          root: pkg.root,
+          confidence
+        }
+      };
     }
 
-    function inferOverview(title, original, requirement, prototypeNotes) {
-      const text = [...original, ...requirement].map(p => p.text).join("\n");
+    function inferOverview(title, text) {
       const sentences = splitSentences(text);
-      const background = sentences.find(s => /问题|当前|背景|用户反馈|导致|无法|需要/.test(s));
-      const goal = sentences.find(s => /新增|优化|支持|调整|改为|实现|同步/.test(s));
-      if (background && goal) return `${background} ${goal}`;
-      if (goal) return goal;
-      if (prototypeNotes.length) return `本需求围绕“${title}”进行页面和流程调整，主要变化包括：${prototypeNotes.slice(0, 2).join("；")}。`;
-      return "";
+      const need = sentences.find(s => /(用户反馈|当前|目前|现有|背景|问题|导致|无法|需要|需|为了)/.test(s));
+      const action = sentences.find(s => /(新增|增加|支持|优化|调整|改为|改成|同步|允许|展示|过滤|下载|转换|退订|匹配)/.test(s));
+      if (need && action && need !== action) return compactSentence(`${need} ${action}`);
+      if (action) return compactSentence(action);
+      if (need) return compactSentence(need);
+      return `围绕“${title}”进行功能或页面规则调整。`;
     }
 
     function inferScope(pages, text) {
       const scope = new Set();
-      for (const p of pages) {
-        const name = (p.title || p.name).replace(/\.html?$/i, "");
-        if (!/需求说明|需求方原始描述|Untitled Document/.test(name)) scope.add(name);
-      }
-      const known = ["后台", "PC", "APP", "小程序", "管理后台", "用户侧", "结算页", "优惠券列表", "使用优惠券"];
+      const known = ["管理后台", "后台", "PC", "APP", "小程序", "用户侧", "管理中心", "财务管理", "优惠券列表", "结算页", "确认订单页", "使用优惠券页", "域名价格页", "帮助中心"];
       for (const k of known) if (text.includes(k)) scope.add(k);
-      return Array.from(scope).filter(Boolean).slice(0, 12);
+      for (const p of pages) {
+        const name = p.title;
+        if (!/(需求说明|需求背景|需求方原始描述|原型|Untitled|index|start)/i.test(name) && name.length <= 28) scope.add(name);
+      }
+      return Array.from(scope).slice(0, 10);
     }
 
-    function inferPrototypeNotes(pages) {
-      const notes = [];
-      for (const p of pages) {
-        const lines = p.text.split("\n");
+    function inferPrototypeChanges(pages) {
+      const result = [];
+      const pageKeywords = /(原型|页面|后台|PC|APP|小程序|用户|管理|结算|列表|详情|确认|弹窗|入口|按钮|分类|字段|筛选|下载|退订)/;
+      const changeKeywords = /(新增|增加|支持|展示|隐藏|改为|改成|调整|默认|同步|跳转|选择|勾选|移除|删除|过滤|下载|转换|提示|入口|按钮|分类|字段|页面结构|标题)/;
+
+      for (const page of pages) {
+        const lines = page.text.split("\n").map(cleanOneLine).filter(Boolean);
         for (const line of lines) {
-          if (/【?增|新增|增加|改为|调整|支持|展示|隐藏|入口|按钮|分类|弹窗|页面结构|标题|默认/.test(line)) {
-            notes.push(normalizeLine(line, p));
+          if (line.length < 8 || line.length > 160) continue;
+          if (changeKeywords.test(line) && (pageKeywords.test(page.title) || pageKeywords.test(line))) {
+            result.push(`${page.title}：${stripLeadWords(line)}`);
           }
         }
       }
-      return unique(notes).slice(0, 12);
+      return uniqueByMeaning(result).slice(0, 8);
     }
 
     function inferRules(text) {
-      const rules = splitSentences(text).filter(s =>
-        /复用|沿用|若|如果|当|仅|不调整|不新增|默认|校验|匹配|验证|计算|退回|失败|成功|状态|范围|权限/.test(s)
-      );
-      return unique(rules).slice(0, 14);
+      const sentences = splitSentences(text);
+      const ruleKeywords = /(规则|逻辑|校验|匹配|验证|计算|复用|沿用|默认|不调整|不新增|不改变|保持|失败|成功|状态|权限|范围|条件|过滤|退回|同步|仅|若|如果|当|超过|允许|不允许)/;
+      return uniqueByMeaning(sentences.filter(s => ruleKeywords.test(s)).map(stripLeadWords)).slice(0, 10);
     }
 
     function inferNotes(text) {
-      const notes = splitSentences(text).filter(s => /异常|失败|不支持|不调整|不新增|仅|默认|未提及|保持|沿用|复用/.test(s));
-      return unique(notes).slice(0, 10);
+      const sentences = splitSentences(text);
+      const noteKeywords = /(非本次范围|不处理|不调整|不新增|不改变|保持|风险|注意|异常|失败|超时|特殊|需确认|建议|未提及)/;
+      return uniqueByMeaning(sentences.filter(s => noteKeywords.test(s)).map(stripLeadWords)).slice(0, 6);
     }
 
-    function normalizeLine(line, page) {
-      line = line.replace(/^样式说明[:：]?/, "").replace(/^交互说明[:：]?/, "").trim();
-      const title = (page.title || page.name).replace(/\.html?$/i, "");
-      if (line.length < 12) return "";
-      return `${title}：${line}`;
+    function inferModules(title, text, scope) {
+      const dict = ["优惠券", "转接口", "财务管理", "结算", "购物车", "邮箱认证", "推广邮件", "退订", "外部域名", "域名证书", "模板", "企业认证", "抢注", "交易平台", "操作保护", "域名价格", "帮助中心"];
+      const modules = new Set();
+      for (const k of dict) if ((title + "\n" + text).includes(k)) modules.add(k);
+      for (const s of scope) if (s.length <= 8) modules.add(s);
+      return Array.from(modules).slice(0, 8);
     }
 
-    function pickPages(pages, keys) {
-      return pages.filter(p => keys.some(k => (p.name + p.title).includes(k)));
+    function scoreCard(card, pkg) {
+      let score = 0;
+      if (card.overview && card.overview.length > 15) score += 25;
+      if (card.scope.length) score += 20;
+      if (card.prototypeChanges.length >= 2) score += 25;
+      if (card.rules.length >= 2) score += 20;
+      if (pkg.images.length) score += 5;
+      if (pkg.pages.length >= 2) score += 5;
+      if (score >= 80) return "较完整";
+      if (score >= 55) return "可入库草稿";
+      return "需人工补充";
     }
 
-    function splitSentences(text) {
-      return cleanText(text)
-        .split(/[\n。；;]/)
-        .map(s => s.trim())
-        .filter(s => s.length >= 12 && s.length <= 180);
+    function buildMarkdown(card) {
+      const lines = [];
+      lines.push(`# ${card.title}`);
+      lines.push("");
+      lines.push("## 概括");
+      lines.push(card.overview);
+      lines.push("");
+      lines.push("## 涉及范围");
+      lines.push(toBullets(card.scope, "未稳定识别，请人工补充。"));
+      lines.push("");
+      lines.push("## 原型改动");
+      lines.push(toBullets(card.prototypeChanges, "未稳定识别原型改动，请查看原型页面补充。"));
+      lines.push("");
+      lines.push("## 业务规则");
+      lines.push(toBullets(card.rules, "未稳定识别业务规则，请人工补充。"));
+      lines.push("");
+      lines.push("## 注意事项");
+      lines.push(toBullets(card.notes, "未识别到额外注意事项。"));
+      lines.push("");
+      lines.push("## 关联模块");
+      lines.push(toBullets(card.modules.map(m => `[[${m}]]`), "未稳定识别关联模块。"));
+      lines.push("");
+      lines.push("## 来源信息");
+      lines.push(`- HTML 页面数：${card.source.htmlPages}`);
+      lines.push(`- 图片/截图数：${card.source.images}`);
+      lines.push(`- 完整度判断：${card.source.confidence}`);
+      lines.push("- 说明：本地版未调用 AI；若关键内容只存在于截图里，需要接入 AI 视觉/OCR 后再补充。");
+      return lines.join("\n");
     }
 
-    function cleanText(text) {
-      const seen = new Set();
-      return String(text || "")
-        .replace(/\u00a0/g, " ")
-        .split(/\n/)
-        .map(s => s.trim().replace(/[ \t]+/g, " "))
-        .filter(Boolean)
-        .filter(s => !/^(\d+|增|改|新增|删除|[a-z]\d+)$/i.test(s))
-        .filter(s => {
-          const key = s.replace(/\s+/g, "");
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        })
-        .join("\n");
-    }
-
-    function unique(list) {
-      const seen = new Set();
-      return list.map(s => String(s || "").trim()).filter(s => {
-        if (!s) return false;
-        const key = s.replace(/\s+/g, "");
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-    }
-
-    function isShellPage(name) { return /^(index|start|start_c_1|start_with_pages)\.html$/i.test(name); }
-    function pageRank(name) {
-      if (/需求方原始描述/.test(name)) return 1;
-      if (/需求说明|PRD/.test(name)) return 2;
-      return 3;
-    }
-    function norm(path) { return String(path || "").replace(/\\/g, "/").replace(/^\/+/, ""); }
-    function groupKey(path) {
-      const parts = norm(path).split("/");
-      if (parts.length <= 1) return ".";
-      parts.pop();
-      return parts.join("/") || ".";
-    }
-    function groupName(key, fallback) {
-      if (key === ".") return fallback.replace(/\.html?$/i, "");
-      return key.split("/").filter(Boolean).pop() || fallback.replace(/\.html?$/i, "");
-    }
-    function isUnder(path, root) {
-      const p = norm(path);
-      if (root === ".") return !p.includes("/");
-      return p.startsWith(root.replace(/\/$/, "") + "/");
+    function buildRawExtract(pkg) {
+      const lines = [];
+      lines.push(`# ${cleanTitle(pkg.name)} - 原始抽取`);
+      lines.push("");
+      for (const page of pkg.pages) {
+        lines.push(`## ${displayPageTitle(page)}`);
+        lines.push(page.text.slice(0, 5000));
+        lines.push("");
+      }
+      if (pkg.images.length) {
+        lines.push("## 图片资源");
+        for (const img of pkg.images.slice(0, 80)) lines.push(`- ${img.relativePath} (${Math.round(img.size / 1024)} KB)`);
+        if (pkg.images.length > 80) lines.push(`- 其余 ${pkg.images.length - 80} 张图片已省略`);
+      }
+      return lines.join("\n");
     }
 
     function render() {
       workspace.style.display = state.packages.length ? "" : "none";
       clearBtn.disabled = !state.packages.length;
-      downloadAllBtn.disabled = !state.packages.length;
+      downloadAllMdBtn.disabled = !state.packages.length;
+      downloadAllDocxBtn.disabled = !state.packages.length;
       renderStats();
       renderList();
       renderCurrent();
@@ -410,11 +463,13 @@
       if (!state.packages.length) { stats.style.display = "none"; return; }
       const pages = state.packages.reduce((sum, p) => sum + p.pages.length, 0);
       const images = state.packages.reduce((sum, p) => sum + p.images.length, 0);
+      const words = state.packages.reduce((sum, p) => sum + p.markdown.length, 0);
       stats.style.display = "";
       stats.innerHTML = `
         <div class="stat"><strong>${state.packages.length}</strong><span>需求包</span></div>
         <div class="stat"><strong>${pages}</strong><span>HTML 页面</span></div>
         <div class="stat"><strong>${images}</strong><span>图片/截图</span></div>
+        <div class="stat"><strong>${words}</strong><span>知识卡片字数</span></div>
         <div class="stat"><strong>0</strong><span>API 调用</span></div>
       `;
     }
@@ -424,7 +479,7 @@
       state.packages.forEach((pkg, i) => {
         const el = document.createElement("div");
         el.className = "pkg" + (i === state.selected ? " active" : "");
-        el.innerHTML = `<h3>${esc(pkg.name)}</h3><p>${pkg.pages.length} 个页面 · ${pkg.images.length} 张图片</p>`;
+        el.innerHTML = `<h3>${esc(pkg.card.title)}</h3><p>${pkg.pages.length} 个页面 · ${pkg.images.length} 张图片 · ${pkg.card.source.confidence}</p>`;
         el.onclick = () => { state.selected = i; render(); };
         packageList.appendChild(el);
       });
@@ -432,41 +487,75 @@
 
     function renderCurrent() {
       const pkg = state.packages[state.selected];
-      downloadBtn.disabled = !pkg;
+      downloadMdBtn.disabled = !pkg;
+      downloadDocxBtn.disabled = !pkg;
       copyBtn.disabled = !pkg;
+      cardTab.classList.toggle("active", state.tab === "card");
+      markdownTab.classList.toggle("active", state.tab === "markdown");
+      rawTab.classList.toggle("active", state.tab === "raw");
+
       if (!pkg) {
         currentTitle.textContent = "请选择需求包";
         result.className = "empty";
-        result.textContent = "选择文件夹后，这里会显示规则生成的 Markdown 草稿。";
+        result.textContent = "选择文件夹后，这里会显示总结后的产品知识卡片。";
         return;
       }
-      currentTitle.textContent = pkg.name;
+
+      currentTitle.textContent = pkg.card.title;
       result.className = "";
-      result.innerHTML = `<pre>${esc(pkg.markdown)}</pre>`;
+      if (state.tab === "markdown") result.innerHTML = `<pre>${esc(pkg.markdown)}</pre>`;
+      else if (state.tab === "raw") result.innerHTML = `<pre>${esc(pkg.raw)}</pre>`;
+      else result.innerHTML = renderCard(pkg.card);
     }
 
-    function downloadCurrent() {
+    function renderCard(card) {
+      return `
+        <div class="card"><h3>概括</h3><p>${esc(card.overview)}</p></div>
+        ${renderListCard("涉及范围", card.scope)}
+        ${renderListCard("原型改动", card.prototypeChanges)}
+        ${renderListCard("业务规则", card.rules)}
+        ${renderListCard("注意事项", card.notes)}
+        ${renderListCard("关联模块", card.modules.map(m => `[[${m}]]`))}
+        <div class="card"><h3>来源信息</h3><p>HTML 页面数：${card.source.htmlPages}；图片/截图数：${card.source.images}；完整度判断：${card.source.confidence}</p></div>
+      `;
+    }
+
+    function renderListCard(title, list) {
+      const body = list.length ? `<ul>${list.map(i => `<li>${esc(i)}</li>`).join("")}</ul>` : "<p>未稳定识别，请人工补充。</p>";
+      return `<div class="card"><h3>${esc(title)}</h3>${body}</div>`;
+    }
+
+    function setTab(tab) {
+      state.tab = tab;
+      renderCurrent();
+    }
+
+    function downloadCurrentMarkdown() {
       const pkg = state.packages[state.selected];
       if (!pkg) return;
-      downloadText(`${safeName(pkg.name)}.md`, pkg.markdown);
+      downloadText(`${safeName(pkg.card.title)}.md`, pkg.markdown, "text/markdown;charset=utf-8");
     }
-    function downloadAll() {
+
+    function downloadAllMarkdown() {
       const text = state.packages.map(p => p.markdown).join("\n\n---\n\n");
-      downloadText(`prd_markdown_${new Date().toISOString().slice(0, 10)}.md`, text);
+      downloadText(`PRD知识库总结_${today()}.md`, text, "text/markdown;charset=utf-8");
     }
+
+    function downloadCurrentDocx() {
+      const pkg = state.packages[state.selected];
+      if (!pkg) return;
+      downloadDocx(`${safeName(pkg.card.title)}.docx`, [pkg.card]);
+    }
+
+    function downloadAllDocx() {
+      downloadDocx(`PRD知识库总结_${today()}.docx`, state.packages.map(p => p.card));
+    }
+
     async function copyCurrent() {
       const pkg = state.packages[state.selected];
       if (pkg) await navigator.clipboard.writeText(pkg.markdown);
     }
-    function downloadText(name, text) {
-      const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = name;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
+
     function clearAll() {
       state.packages = [];
       state.selected = -1;
@@ -474,9 +563,233 @@
       fileInput.value = "";
       render();
     }
-    function safeName(name) { return String(name || "prd").replace(/[\\/:*?"<>|]/g, "_").slice(0, 80); }
+
+    function downloadText(name, text, type) {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadDocx(name, cards) {
+      const documentXml = buildDocumentXml(cards);
+      const files = {
+        "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`,
+        "_rels/.rels": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`,
+        "docProps/core.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>PRD知识库总结</dc:title><dc:creator>PRD HTML 知识卡片工具</dc:creator><cp:lastModifiedBy>PRD HTML 知识卡片工具</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:modified></cp:coreProperties>`,
+        "docProps/app.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>PRD HTML Knowledge Tool</Application></Properties>`,
+        "word/document.xml": documentXml
+      };
+      const blob = new Blob([makeZip(files)], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function buildDocumentXml(cards) {
+      const parts = [];
+      parts.push(p("PRD 知识库总结", "title"));
+      parts.push(p("本文件由 PRD HTML 知识卡片工具生成，适合上传知识库或作为 Obsidian/LLM Wiki 入库材料。", "normal"));
+      for (const card of cards) {
+        parts.push(p(card.title, "h1"));
+        parts.push(p("概括", "h2"));
+        parts.push(p(card.overview, "normal"));
+        addList(parts, "涉及范围", card.scope);
+        addList(parts, "原型改动", card.prototypeChanges);
+        addList(parts, "业务规则", card.rules);
+        addList(parts, "注意事项", card.notes);
+        addList(parts, "关联模块", card.modules.map(m => `[[${m}]]`));
+        parts.push(p(`来源信息：HTML 页面数 ${card.source.htmlPages}；图片/截图数 ${card.source.images}；完整度判断 ${card.source.confidence}。`, "normal"));
+      }
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${parts.join("")}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>`;
+    }
+
+    function addList(parts, title, list) {
+      parts.push(p(title, "h2"));
+      if (!list.length) parts.push(p("未稳定识别，请人工补充。", "bullet"));
+      for (const item of list) parts.push(p(item, "bullet"));
+    }
+
+    function p(text, type) {
+      const safe = xmlEsc(text);
+      if (type === "title") return `<w:p><w:pPr><w:spacing w:after="240"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="40"/></w:rPr><w:t>${safe}</w:t></w:r></w:p>`;
+      if (type === "h1") return `<w:p><w:pPr><w:spacing w:before="260" w:after="120"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t>${safe}</w:t></w:r></w:p>`;
+      if (type === "h2") return `<w:p><w:pPr><w:spacing w:before="140" w:after="80"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="24"/></w:rPr><w:t>${safe}</w:t></w:r></w:p>`;
+      if (type === "bullet") return `<w:p><w:pPr><w:ind w:left="420" w:hanging="220"/></w:pPr><w:r><w:t>• ${safe}</w:t></w:r></w:p>`;
+      return `<w:p><w:r><w:t>${safe}</w:t></w:r></w:p>`;
+    }
+
+    function makeZip(files) {
+      const enc = new TextEncoder();
+      const localParts = [];
+      const centralParts = [];
+      let offset = 0;
+      for (const name of Object.keys(files)) {
+        const nameBytes = enc.encode(name);
+        const data = enc.encode(files[name]);
+        const crc = crc32(data);
+        const local = concatBytes(
+          u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0),
+          u32(crc), u32(data.length), u32(data.length), u16(nameBytes.length), u16(0), nameBytes, data
+        );
+        const central = concatBytes(
+          u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0),
+          u32(crc), u32(data.length), u32(data.length), u16(nameBytes.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset), nameBytes
+        );
+        localParts.push(local);
+        centralParts.push(central);
+        offset += local.length;
+      }
+      const centralSize = centralParts.reduce((s, p) => s + p.length, 0);
+      const end = concatBytes(u32(0x06054b50), u16(0), u16(0), u16(centralParts.length), u16(centralParts.length), u32(centralSize), u32(offset), u16(0));
+      return concatBytes(...localParts, ...centralParts, end);
+    }
+
+    function crc32(data) {
+      let c = 0xffffffff;
+      for (let i = 0; i < data.length; i++) {
+        c ^= data[i];
+        for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1));
+      }
+      return (c ^ 0xffffffff) >>> 0;
+    }
+
+    function u16(n) { return new Uint8Array([n & 255, (n >>> 8) & 255]); }
+    function u32(n) { return new Uint8Array([n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255]); }
+    function concatBytes(...parts) {
+      const len = parts.reduce((s, p) => s + p.length, 0);
+      const out = new Uint8Array(len);
+      let pos = 0;
+      for (const p of parts) { out.set(p, pos); pos += p.length; }
+      return out;
+    }
+
+    function toBullets(list, fallback) {
+      return (list.length ? list : [fallback]).map(s => `- ${s}`).join("\n");
+    }
+
+    function splitSentences(text) {
+      return cleanText(text)
+        .split(/[\n。；;]/)
+        .map(cleanOneLine)
+        .filter(s => s.length >= 10 && s.length <= 180);
+    }
+
+    function cleanText(text) {
+      const seen = new Set();
+      return String(text || "")
+        .replace(/\u00a0/g, " ")
+        .replace(/\r/g, "\n")
+        .split(/\n+/)
+        .map(cleanOneLine)
+        .filter(Boolean)
+        .filter(s => !/^(新增|删除|修改|完成|返回|确定|取消|\d+|[a-z]\d+)$/i.test(s))
+        .filter(s => {
+          const key = s.replace(/\s+/g, "");
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .join("\n");
+    }
+
+    function cleanOneLine(text) {
+      return String(text || "")
+        .replace(/\s+/g, " ")
+        .replace(/^[\-·•\d.、\s]+/, "")
+        .trim();
+    }
+
+    function compactSentence(text) {
+      return cleanOneLine(text).replace(/(.{120}).+/, "$1。");
+    }
+
+    function stripLeadWords(text) {
+      return cleanOneLine(text)
+        .replace(/^样式调整说明[:：]?/, "")
+        .replace(/^交互说明[:：]?/, "")
+        .replace(/^页面规则[:：]?/, "")
+        .replace(/^具体说明[:：]?/, "");
+    }
+
+    function uniqueByMeaning(list) {
+      const seen = new Set();
+      const out = [];
+      for (const item of list) {
+        const value = cleanOneLine(item);
+        if (!value) continue;
+        const key = value.replace(/[，。；：、\s]/g, "").slice(0, 80);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(value);
+      }
+      return out;
+    }
+
+    function displayPageTitle(page) {
+      return cleanTitle(page.title || page.name.replace(/\.html?$/i, ""));
+    }
+
+    function cleanTitle(name) {
+      return cleanOneLine(String(name || "未命名需求").replace(/\.html?$/i, "").replace(/[_-]?PRD$/i, ""));
+    }
+
+    function isShellPage(name) {
+      return /^(index|start|start_c_1|start_with_pages|resources|chrome)\.html$/i.test(name);
+    }
+
+    function isNoisePath(path) {
+      return /(^|\/)(resources|chrome|data|plugins|files)(\/|$)/i.test(norm(path));
+    }
+
+    function pageRank(name) {
+      if (/需求方原始描述/.test(name)) return 1;
+      if (/需求说明|PRD/i.test(name)) return 2;
+      return 3;
+    }
+
+    function norm(path) {
+      return String(path || "").replace(/\\/g, "/").replace(/^\/+/, "");
+    }
+
+    function groupKey(path) {
+      const parts = norm(path).split("/");
+      if (parts.length <= 1) return ".";
+      parts.pop();
+      return parts.join("/") || ".";
+    }
+
+    function groupName(key, fallback) {
+      if (key === ".") return fallback.replace(/\.html?$/i, "");
+      return key.split("/").filter(Boolean).pop() || fallback.replace(/\.html?$/i, "");
+    }
+
+    function isUnder(path, root) {
+      const p = norm(path);
+      if (root === ".") return !p.includes("/");
+      return p.startsWith(root.replace(/\/$/, "") + "/");
+    }
+
+    function today() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function safeName(name) {
+      return String(name || "prd").replace(/[\\/:*?"<>|]/g, "_").slice(0, 80);
+    }
+
     function esc(text) {
       return String(text ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function xmlEsc(text) {
+      return String(text ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
     }
   </script>
 </body>
